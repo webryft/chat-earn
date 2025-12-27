@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat & Earn</title>
+  <style>
+    body {margin:0;font-family:Arial,Helvetica,sans-serif;background:#0a8f5a;color:#fff;}
+    header {display:flex;justify-content:space-between;align-items:center;padding:15px 30px;}
+    nav a {color:#fff;margin-left:15px;text-decoration:none;font-weight:bold;cursor:pointer;}
+    .hero {text-align:center;padding:60px 20px;}
+    .hero h1 {font-size:38px;max-width:900px;margin:0 auto 20px;}
+    .hero p {max-width:850px;margin:0 auto 25px;}
+    .btn {background:#fff;color:#0a8f5a;padding:12px 28px;border-radius:5px;font-weight:bold;cursor:pointer;display:inline-block;}
+    .cards {display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:40px;background:#f4f4f4;color:#000;}
+    .card {background:#fff;border-radius:8px;padding:20px;text-align:center;cursor:pointer;}
+    .card img {width:90px;height:90px;border-radius:50%;}
+    .card p {font-size:14px;}
+    .fee {color:#0a8f5a;font-weight:bold;}
+    .overlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000;}
+    .popup {background:#fff;color:#000;padding:25px;border-radius:8px;width:320px;}
+    .popup h3 {margin-top:0;}
+    .popup input {width:100%;padding:8px;margin-bottom:10px;}
+    .popup button {padding:8px 15px;margin-right:10px;}
+    .loader {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0a8f5a;align-items:center;justify-content:center;color:#fff;font-size:22px;z-index:2000;}
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Chat & earn</h2>
+  <nav>
+    <a onclick="openPopup('signup')">Create Account</a>
+    <a onclick="openPopup('signin')">Sign In</a>
+    <a onclick="signOut()">Sign Out</a>
+    <a onclick="forgot()">Forgotten Password</a>
+    <a onclick="navigate('about.html')">About</a>
+    <a onclick="whatsApp(applyMsg)">Contact Us</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Make money online by chatting lonely men, curious strangers, foreigners, older men, and people seeking your advice.</h1>
+  <p>On the Talkroom app, you get paid to chat from any country. So download the app to start earning online now.</p>
+  <div class="btn" onclick="whatsApp(applyMsg)">Apply Now</div>
+</section>
+
+<section class="cards">
+  <div class="card" onclick="cardClick(msg1)">
+    <img src="image.jpg" />
+    <h4>Emily</h4>
+    <p>Need a friendly ear? I'm here to listen.</p>
+    <div class="fee">My chat fee is $50</div>
+  </div>
+  <div class="card" onclick="cardClick(msg2)">
+    <img src="image1.jpg" />
+    <h4>Madison</h4>
+    <p>Turning small talk into big smiles.</p>
+    <div class="fee">My chat fee is $20</div>
+  </div>
+  <div class="card" onclick="cardClick(msg3)">
+    <img src="image3.jpg" />
+    <h4>Jake</h4>
+    <p>A friendly voice ready to chat.</p>
+    <div class="fee">My chat fee is $15</div>
+  </div>
+</section>
+
+<div class="overlay" id="popup"></div>
+<div class="loader" id="loader">Loading...</div>
+
+<script>
+  let loggedIn = false;
+  let passwordStore = '';
+
+  const msg1 = "Hello how are you doing, do you care for a friendly chat";
+  const msg2 = "hi there how are you doing, are you available for a chat";
+  const msg3 = "hello dear how are you doing, let have a lovely conversation";
+  const applyMsg = "hello I want to apply, what are the requirements";
+
+  function openPopup(type) {
+    const popup = document.getElementById('popup');
+    popup.style.display = 'flex';
+    if (type === 'signup') {
+      popup.innerHTML = `<div class='popup'><h3>Create Account</h3>
+        <input placeholder='Username'>
+        <input type='password' placeholder='Password' id='spass'>
+        <input placeholder='Pet Name'>
+        <button onclick='signup()'>Submit</button>
+        <button onclick='closePopup()'>Cancel</button></div>`;
+    }
+    if (type === 'signin') {
+      popup.innerHTML = `<div class='popup'><h3>Sign In</h3>
+        <input placeholder='Username'>
+        <input type='password' placeholder='Password' id='lpass'>
+        <button onclick='signin()'>Sign In</button>
+        <button onclick='closePopup()'>Cancel</button></div>`;
+    }
+  }
+
+  function signup() {
+    passwordStore = document.getElementById('spass').value;
+    alert('Account created successfully');
+    closePopup();
+  }
+
+  function signin() {
+    loggedIn = true;
+    alert('Signed in successfully');
+    closePopup();
+  }
+
+  function signOut() {
+    if (!loggedIn) return alert('You are not signed in');
+    const pass = prompt('Enter password to sign out');
+    if (pass === passwordStore) {
+      loggedIn = false;
+      alert('Signed out successfully');
+    } else {
+      alert('Incorrect password');
+    }
+  }
+
+  function cardClick(msg) {
+    if (!loggedIn) {
+      return alert('Please create an account or sign in first');
+    }
+    whatsApp(msg);
+  }
+
+  function whatsApp(message) {
+    showLoader();
+    setTimeout(() => {
+      window.location.href = `https://wa.me/2340000000000?text=${encodeURIComponent(message)}`;
+    }, 2000);
+  }
+
+  function navigate(page) {
+    showLoader();
+    setTimeout(() => { window.location.href = page; }, 2000);
+  }
+
+  function showLoader() {
+    document.getElementById('loader').style.display = 'flex';
+  }
+
+  function closePopup() {
+    document.getElementById('popup').style.display = 'none';
+  }
+
+  function forgot() {
+    alert('Please contact support to reset your password');
+  }
+</script>
+
+</body>
+</html>
