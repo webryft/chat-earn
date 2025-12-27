@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Chat & Earn</title>
 <style>
   :root{
@@ -11,8 +11,6 @@
     --muted-bg:#f4f4f4;
     --card-width:220px;
   }
-
-  /* Page basics */
   *{box-sizing:border-box}
   body{
     margin:0;
@@ -22,140 +20,67 @@
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
   }
+  header{display:flex;justify-content:space-between;align-items:center;padding:15px 30px}
+  nav a{color:#fff;margin-left:20px;cursor:pointer;text-decoration:none;font-weight:600}
+  .hero{text-align:center;padding:48px 20px 28px}
+  .hero h1{max-width:900px;margin:0 auto;font-size:28px;line-height:1.25}
+  .hero p{max-width:800px;margin:18px auto;color:rgba(255,255,255,0.95)}
+  .btn{background:var(--white);color:var(--brand-green);padding:12px 26px;border-radius:6px;font-weight:700;cursor:pointer;display:inline-block}
 
-  header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:15px 30px;
-  }
-  nav a{
-    color:#fff;
-    margin-left:20px;
-    cursor:pointer;
-    text-decoration:none;
-    font-weight:600;
-  }
-
-  .hero{
-    text-align:center;
-    padding:48px 20px 28px;
-  }
-  .hero h1{
-    max-width:900px;
-    margin:0 auto;
-    font-size:28px;
-    line-height:1.25;
-  }
-  .hero p{
-    max-width:800px;
-    margin:18px auto;
-    color:rgba(255,255,255,0.95);
-  }
-  .btn{
-    background:var(--white);
-    color:var(--brand-green);
-    padding:12px 26px;
-    border-radius:6px;
-    font-weight:700;
-    cursor:pointer;
-    display:inline-block;
-  }
-
-  /* Cards container: horizontal row (side-by-side) */
-  .cards-wrap{
-    background:var(--muted-bg);
-    padding:28px 20px;
-  }
+  .cards-wrap{background:var(--muted-bg);padding:28px 20px}
   .cards{
     display:flex;
-    flex-direction:row;        /* horizontal row */
+    flex-direction:row;
     gap:20px;
     justify-content:center;
     align-items:flex-start;
     padding:10px;
     max-width:1100px;
     margin:0 auto;
-    flex-wrap:wrap;           /* wrap on small screens */
+    flex-wrap:wrap;
   }
-
   .card{
-    background:#fff;
-    color:#111;
-    border-radius:10px;
-    padding:18px;
-    text-align:center;
-    cursor:pointer;
-    width:var(--card-width);
-    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+    background:#fff;color:#111;border-radius:10px;padding:18px;text-align:center;cursor:pointer;
+    width:var(--card-width);box-shadow:0 6px 18px rgba(0,0,0,0.08);
     transition:transform .12s ease, box-shadow .12s ease;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:10px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
   }
-  .card:hover{
-    transform:translateY(-6px);
-    box-shadow:0 18px 36px rgba(0,0,0,0.12);
-  }
-
-  .card img{
-    width:90px;
-    height:90px;
-    border-radius:50%;
-    object-fit:cover;
-    border:3px solid var(--brand-green);
-    background:#eee;
-  }
+  .card:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(0,0,0,0.12)}
+  .card img{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--brand-green);background:#eee}
   .card h4{margin:6px 0 0;font-size:16px}
   .card p{font-size:13px;margin:0;color:#444}
   .fee{color:var(--brand-green);font-weight:700;margin-top:6px}
 
-  /* Modal / loader */
-  .modal-bg, .loader {
-    position:fixed;
-    top:0;left:0;
-    width:100%;height:100%;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:1200;
-  }
+  /* modal / loader */
+  .modal-bg, .loader {position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:1200}
   .modal-bg{background:rgba(0,0,0,0.6)}
   .modal{
-    background:#fff;color:#000;padding:22px;border-radius:12px;width:90%;max-width:420px;
+    background:#fff;color:#000;padding:22px;border-radius:12px;width:90%;max-width:520px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.25);
   }
-  .modal button{margin-top:14px;padding:10px 14px;border:none;border-radius:8px;cursor:pointer}
+  .modal h3{margin:0 0 10px;font-size:18px}
+  .modal .row{display:flex;gap:10px}
+  .modal label{display:block;font-size:13px;margin:8px 0 4px;color:#333}
+  .modal input, .modal select{
+    width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;
+  }
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+  .modal button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;font-weight:700}
   .primary{background:var(--brand-green);color:#fff}
   .secondary{background:#ddd;color:#111}
   .loader{background:var(--brand-green);color:#fff;font-size:20px}
 
-  /* Simple popup overlay for card message */
-  .overlay{
-    position:fixed;inset:0;
-    background:rgba(0,0,0,0.6);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:1300;
-  }
-  .popup{
-    background:#fff;color:#000;padding:20px;border-radius:10px;width:320px;text-align:center;
-    box-shadow:0 20px 40px rgba(0,0,0,0.25);
-  }
+  /* popup for card message */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1300}
+  .popup{background:#fff;color:#000;padding:20px;border-radius:10px;width:320px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.25)}
   .popup h3{margin:0 0 8px;font-size:18px}
   .popup p{margin:0;color:#333;font-size:14px}
 
-  /* Responsive */
-  @media (max-width:880px){
-    .cards{gap:14px;padding:8px}
-    .card{width:180px}
-  }
-  @media (max-width:520px){
-    .hero h1{font-size:20px}
-    .cards{flex-direction:row;gap:12px;overflow-x:auto;padding:12px}
-    .card{min-width:160px;flex:0 0 auto}
-  }
+  /* success dialog */
+  .success {background:#fff;color:#000;padding:20px;border-radius:10px;width:420px;max-width:90%;text-align:center}
+
+  @media (max-width:880px){.cards{gap:14px;padding:8px}.card{width:180px}}
+  @media (max-width:520px){.hero h1{font-size:20px}.cards{flex-direction:row;gap:12px;overflow-x:auto;padding:12px}.card{min-width:160px;flex:0 0 auto}}
 </style>
 </head>
 <body>
@@ -170,10 +95,9 @@
 <section class="hero">
   <h1>Make money online by chatting lonely men, curious strangers, foreigners, older men, and people seeking your advice.</h1>
   <p>On the Talkroom app, you get paid to chat from any country. So download the app to start earning online now.</p>
-  <div class="btn" onclick="apply()">Apply Now</div>
+  <div class="btn" onclick="openApplyForm()">Apply Now</div>
 </section>
 
-<!-- Cards area (horizontal row) -->
 <section class="cards-wrap" aria-label="Profiles">
   <div class="cards">
     <div class="card" onclick="openPopup('Emily')">
@@ -199,80 +123,210 @@
   </div>
 </section>
 
-<!-- Modal for Apply Now payment info -->
-<div class="modal-bg" id="modal"></div>
-<div class="loader" id="loader">Processing...</div>
+<!-- modal container -->
+<div class="modal-bg" id="modal" aria-hidden="true"></div>
+<div class="loader" id="loader" aria-hidden="true">Processing...</div>
 
-<!-- Simple popup shown when clicking a card (message only) -->
-<div class="overlay" id="popup" onclick="closePopup(event)">
+<!-- card popup (message only) -->
+<div class="overlay" id="cardPopup" onclick="closeCardPopup(event)" aria-hidden="true">
   <div class="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
     <h3 id="popupTitle">Apply to Chat</h3>
     <p>Click the Apply button to start chatting</p>
   </div>
 </div>
 
+<!-- apply form modal (hidden until opened) -->
 <script>
-  /* Apply Now modal */
-  function apply(){
-    const m = document.getElementById('modal');
-    m.innerHTML = "<div class='modal'><h3>Application Fee</h3>"
-      + "<p><strong>₦5,000</strong></p>"
-      + "<p>Account Number: <strong>1234567890</strong><br>"
-      + "Account Name: <strong>Jude Daniel</strong><br>"
-      + "Bank: <strong>Access Bank</strong></p>"
-      + "<div style='display:flex;gap:10px;justify-content:flex-end'>"
-      + "<button class='primary' onclick='payDone()'>I have made payment</button>"
-      + "<button class='secondary' onclick='closeM()'>Cancel</button></div></div>";
-    m.style.display = 'flex';
-    m.style.alignItems = 'center';
-    m.style.justifyContent = 'center';
+  /* Utility to create and show the apply form modal with validation */
+  function openApplyForm(){
+    const modalBg = document.getElementById('modal');
+    modalBg.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+        <h3 id="formTitle">Registration Form</h3>
+
+        <label for="name">Name:</label>
+        <input id="name" name="name" type="text" placeholder="Full name" />
+
+        <label for="phone">Phone:</label>
+        <input id="phone" name="phone" type="tel" placeholder="+2348012345678" />
+
+        <label for="country">Country:</label>
+        <input id="country" name="country" type="text" placeholder="Country" />
+
+        <label for="sex">Sex:</label>
+        <select id="sex" name="sex">
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label for="age">Age:</label>
+        <input id="age" name="age" type="number" min="13" placeholder="Age" />
+
+        <label for="marital">Marital Status:</label>
+        <select id="marital" name="marital">
+          <option value="">Select</option>
+          <option value="Single">Single</option>
+          <option value="Married">Married</option>
+          <option value="Divorced">Divorced</option>
+          <option value="Widowed">Widowed</option>
+        </select>
+
+        <div class="actions" style="margin-top:12px;">
+          <button id="applyBtn" class="primary" disabled>Apply</button>
+          <button id="cancelBtn" class="secondary">Cancel</button>
+        </div>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid #eee" />
+
+        <p style="margin:8px 0"><strong>Payment Amount: ₦5,000</strong></p>
+        <p style="margin:0;color:#333">Account Number: <strong>1234567890</strong><br>
+        Account Name: <strong>Jude Daniel</strong><br>
+        Bank: <strong>Access Bank</strong></p>
+      </div>
+    `;
+    modalBg.style.display = 'flex';
+    modalBg.style.alignItems = 'center';
+    modalBg.style.justifyContent = 'center';
+    modalBg.setAttribute('aria-hidden','false');
+
+    // wire up elements and validation
+    const fields = ['name','phone','country','sex','age','marital'].map(id => document.getElementById(id));
+    const applyBtn = document.getElementById('applyBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    function validate(){
+      // all fields must be non-empty; age must be a positive number
+      const valid = fields.every(f => {
+        if(!f) return false;
+        const v = f.value && String(f.value).trim();
+        if(!v) return false;
+        if(f.id === 'age') return Number(v) > 0;
+        return true;
+      });
+      applyBtn.disabled = !valid;
+    }
+
+    fields.forEach(f => f.addEventListener('input', validate));
+    // initial validation
+    validate();
+
+    cancelBtn.addEventListener('click', closeModal);
+    applyBtn.addEventListener('click', () => {
+      // double-check validation
+      if(applyBtn.disabled) return;
+      // gather data
+      const data = {
+        name: document.getElementById('name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        country: document.getElementById('country').value.trim(),
+        sex: document.getElementById('sex').value,
+        age: document.getElementById('age').value.trim(),
+        marital: document.getElementById('marital').value
+      };
+      // show loader then success dialog
+      closeModal();
+      showLoaderThenSuccess(data);
+    });
   }
 
-  function payDone(){
-    const url = "https://wa.me/2349168660191?text=" + encodeURIComponent("I have made payment of ₦5,000 to the account 1234567890");
-    showLoader(url);
+  function closeModal(){
+    const modalBg = document.getElementById('modal');
+    modalBg.style.display = 'none';
+    modalBg.innerHTML = '';
+    modalBg.setAttribute('aria-hidden','true');
   }
 
-  function closeM(){
-    const m = document.getElementById('modal');
-    m.style.display = 'none';
-    m.innerHTML = '';
-  }
-
-  function showLoader(url){
-    const l = document.getElementById('loader');
-    l.style.display = 'flex';
-    l.style.alignItems = 'center';
-    l.style.justifyContent = 'center';
-    setTimeout(()=> {
-      if(url) window.location.href = url;
-      else l.style.display = 'none';
+  function showLoaderThenSuccess(formData){
+    const loader = document.getElementById('loader');
+    loader.style.display = 'flex';
+    loader.style.alignItems = 'center';
+    loader.style.justifyContent = 'center';
+    // 2 second animation
+    setTimeout(() => {
+      loader.style.display = 'none';
+      showSuccessDialog(formData);
     }, 2000);
   }
 
-  function goAbout(){
-    showLoader('about.html');
+  function showSuccessDialog(formData){
+    const modalBg = document.getElementById('modal');
+    modalBg.innerHTML = `
+      <div class="modal success" role="dialog" aria-modal="true">
+        <h3>Application Successful</h3>
+        <p style="margin:10px 0 14px">Please confirm your payment proof to complete registration.</p>
+        <div style="text-align:left;color:#333;margin-bottom:12px">
+          <strong>Applicant</strong><br>
+          Name: ${escapeHtml(formData.name)}<br>
+          Phone: ${escapeHtml(formData.phone)}<br>
+          Country: ${escapeHtml(formData.country)}<br>
+          Sex: ${escapeHtml(formData.sex)}<br>
+          Age: ${escapeHtml(formData.age)}<br>
+          Marital Status: ${escapeHtml(formData.marital)}
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="confirmBtn" class="primary">Confirm</button>
+          <button id="closeSuccess" class="secondary">Close</button>
+        </div>
+      </div>
+    `;
+    modalBg.style.display = 'flex';
+    modalBg.style.alignItems = 'center';
+    modalBg.style.justifyContent = 'center';
+    modalBg.setAttribute('aria-hidden','false');
+
+    document.getElementById('closeSuccess').addEventListener('click', closeModal);
+    document.getElementById('confirmBtn').addEventListener('click', () => {
+      // redirect to WhatsApp with a short message including applicant name and phone
+      const waMsg = `Application submitted. Name: ${formData.name}; Phone: ${formData.phone}; Payment: ₦5,000. I confirm payment proof.`;
+      const url = 'https://wa.me/2349168660191?text=' + encodeURIComponent(waMsg);
+      // show loader then redirect
+      const loader = document.getElementById('loader');
+      loader.style.display = 'flex';
+      loader.style.alignItems = 'center';
+      loader.style.justifyContent = 'center';
+      setTimeout(() => { window.location.href = url; }, 2000);
+    });
   }
 
   /* Card popup: message only. Clicking overlay closes it. */
   function openPopup(name){
-    // show the simple message popup (no buttons)
-    document.getElementById('popup').style.display = 'flex';
+    const p = document.getElementById('cardPopup');
+    const title = p.querySelector('#popupTitle');
+    if(title) title.textContent = 'Apply to Chat';
+    p.style.display = 'flex';
+    p.setAttribute('aria-hidden','false');
   }
-  function closePopup(e){
-    // close when clicking outside the inner popup box
-    if (e.target && e.target.id === 'popup') {
-      document.getElementById('popup').style.display = 'none';
+  function closeCardPopup(e){
+    if(e.target && e.target.id === 'cardPopup'){
+      const p = document.getElementById('cardPopup');
+      p.style.display = 'none';
+      p.setAttribute('aria-hidden','true');
     }
   }
 
-  /* Accessibility: allow Esc to close popup */
+  /* Escape key closes modals/popups */
   document.addEventListener('keydown', function(ev){
     if(ev.key === 'Escape'){
-      const p = document.getElementById('popup');
-      if(p.style.display === 'flex') p.style.display = 'none';
+      const p = document.getElementById('cardPopup');
+      if(p && p.style.display === 'flex') { p.style.display = 'none'; p.setAttribute('aria-hidden','true'); }
+      const modalBg = document.getElementById('modal');
+      if(modalBg && modalBg.style.display === 'flex') { closeModal(); }
     }
   });
+
+  function goAbout(){ 
+    const loader = document.getElementById('loader');
+    loader.style.display = 'flex';
+    setTimeout(()=> { loader.style.display = 'none'; window.location.href = 'about.html'; }, 800);
+  }
+
+  /* small helper to escape HTML in inserted strings */
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
+  }
 </script>
 </body>
 </html>
