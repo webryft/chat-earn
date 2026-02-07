@@ -135,9 +135,9 @@
   </div>
 </div>
 
-<!-- Replace your existing <script> ... </script> block with this updated script -->
-<script>
-/* Utility to escape HTML inserted into the DOM */
+
+ <script>
+/* Helper: escape HTML for safe insertion */
 function escapeHtml(str){
   if(!str) return "";
   return String(str).replace(/[&<>"']/g, function(m){
@@ -145,30 +145,84 @@ function escapeHtml(str){
   });
 }
 
-/* Submit logic extracted so Confirm can call the same behavior */
-function submitApplication(formData){
-  // This preserves your original behavior: close form modal, show loader then success
-  closeModal();
-  showLoaderThenSuccess(formData);
-}
-
-/* Confirmation modal with 25 minute countdown */
+/* Global timer state for confirmation modal */
 let _confirmTimerId = null;
 let _confirmRemaining = 0;
 
-function openConfirmModal(accountDetailsHtml, onConfirm){
+/* Format seconds to MM:SS */
+function formatMMSS(s){
+  const m = Math.floor(s/60).toString().padStart(2,'0');
+  const sec = (s % 60).toString().padStart(2,'0');
+  return `${m}:${sec}`;
+}
+
+/* Clear confirm timer */
+function clearConfirmTimer(){
+  if(_confirmTimerId){
+    clearInterval(_confirmTimerId);
+    _confirmTimerId = null;
+  }
+}
+
+/* Show loader with full registration details and 3s delay, then redirect to WhatsApp */
+function showLoaderWithDetailsAndRedirect(formData){
+  const loader = document.getElementById('loader');
+  // Build loader content with registration + applicant details
+  loader.innerHTML = `
+    <div style="text-align:left;max-width:420px;padding:18px;">
+      <h3 style="margin:0 0 8px;font-size:18px">Processing Payment Confirmation</h3>
+      <div style="color:#fff;background:rgba(0,0,0,0.08);padding:10px;border-radius:8px">
+        <strong style="display:block;margin-bottom:6px;color:#fff">Registration: 5,000</strong>
+        <div style="color:#fff">
+          Account Number: <strong>8168000422</strong><br>
+          Account Name: <strong>Godwin</strong><br>
+          Bank: <strong>Opay</strong>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;color:#fff">
+        <strong>Applicant</strong><br>
+        Name: ${escapeHtml(formData.name)}<br>
+        Phone: ${escapeHtml(formData.phone)}<br>
+        Country: ${escapeHtml(formData.country)}<br>
+        Sex: ${escapeHtml(formData.sex)}<br>
+        Age: ${escapeHtml(formData.age)}<br>
+        Marital Status: ${escapeHtml(formData.marital)}
+      </div>
+
+      <p style="margin-top:12px;color:#fff">Redirecting in 3 seconds...</p>
+    </div>
+  `;
+  loader.style.display = 'flex';
+  loader.style.alignItems = 'center';
+  loader.style.justifyContent = 'center';
+
+  // After 3 seconds, redirect to WhatsApp with message
+  setTimeout(() => {
+    loader.style.display = 'none';
+    loader.innerHTML = 'Processing ...';
+    const waMsg = `Application submitted. Name: ${formData.name}; Phone: ${formData.phone}; Payment: 5,000. I want to confirm payment proof.`;
+    const url = 'https://wa.me/09079525683?text=' + encodeURIComponent(waMsg);
+    window.location.href = url;
+  }, 3000);
+}
+
+/* Open confirmation modal that shows account details + bold countdown and single Confirm */
+function openConfirmModal(accountDetailsHtml, formData){
   const modalBg = document.getElementById('modal');
-  // build modal content
   modalBg.innerHTML = `
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
       <h3 id="confirmTitle">Confirm Payment Details</h3>
+
       <div style="margin:10px 0;color:#333;text-align:left">
         ${accountDetailsHtml}
       </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
         <div style="font-weight:700;color:#111">Time left</div>
-        <div id="confirmTimer" style="font-family:monospace;font-size:16px;color:#111">25:00</div>
+        <div id="confirmTimer" style="font-family:monospace;font-size:18px;color:#111;font-weight:800">25:00</div>
       </div>
+
       <div class="actions" style="margin-top:14px">
         <button id="confirmOk" class="primary">Confirm</button>
         <button id="confirmCancel" class="secondary">Cancel</button>
@@ -180,35 +234,29 @@ function openConfirmModal(accountDetailsHtml, onConfirm){
   modalBg.style.justifyContent = 'center';
   modalBg.setAttribute('aria-hidden','false');
 
-  // start 25 minute countdown
+  // Start 25:00 countdown
   clearConfirmTimer();
-  _confirmRemaining = 25 * 60; // seconds
+  _confirmRemaining = 25 * 60;
   const timerEl = document.getElementById('confirmTimer');
-  function formatMMSS(s){
-    const m = Math.floor(s/60).toString().padStart(2,'0');
-    const sec = (s % 60).toString().padStart(2,'0');
-    return `${m}:${sec}`;
-  }
-  timerEl.textContent = formatMMSS(_confirmRemaining);
+  if(timerEl) timerEl.textContent = formatMMSS(_confirmRemaining);
   _confirmTimerId = setInterval(() => {
     _confirmRemaining--;
     if(timerEl) timerEl.textContent = formatMMSS(_confirmRemaining);
     if(_confirmRemaining <= 0){
       clearConfirmTimer();
-      // auto-close modal on expiry
-      closeModal();
+      closeModal(); // auto-close and abort
     }
   }, 1000);
 
-  // wire buttons
+  // Wire buttons
   const ok = document.getElementById('confirmOk');
   const cancel = document.getElementById('confirmCancel');
 
   ok.addEventListener('click', () => {
-    // disable to prevent double clicks
     ok.disabled = true;
     clearConfirmTimer();
-    onConfirm();
+    // Show loader with full details and redirect after 3s (single confirm only)
+    showLoaderWithDetailsAndRedirect(formData);
   });
 
   cancel.addEventListener('click', () => {
@@ -217,14 +265,7 @@ function openConfirmModal(accountDetailsHtml, onConfirm){
   });
 }
 
-function clearConfirmTimer(){
-  if(_confirmTimerId){
-    clearInterval(_confirmTimerId);
-    _confirmTimerId = null;
-  }
-}
-
-/* Open the registration form modal */
+/* Open the registration form modal (account details removed from form) */
 function openApplyForm(){
   const modalBg = document.getElementById('modal');
   modalBg.innerHTML = `
@@ -271,7 +312,7 @@ function openApplyForm(){
   modalBg.style.justifyContent = 'center';
   modalBg.setAttribute('aria-hidden','false');
 
-  // wire up elements and validation
+  // Wire up validation and buttons
   const fields = ['name','phone','country','sex','age','marital'].map(id => document.getElementById(id));
   const applyBtn = document.getElementById('applyBtn');
   const cancelBtn = document.getElementById('cancelBtn');
@@ -302,18 +343,18 @@ function openApplyForm(){
       marital: document.getElementById('marital').value
     };
 
-    // Build account details HTML to show in confirmation modal
+    // Account details HTML to show in confirmation modal
     const accountHtml = `
-      <p style="margin:0"><strong>Registration: 5,000</strong></p>
-      <p style="margin:8px 0 0">
+      <p style="margin:0;color:#333"><strong>Registration: 5,000</strong></p>
+      <p style="margin:8px 0 0;color:#333">
         Account Number: <strong>8168000422</strong><br>
         Account Name: <strong>Godwin</strong><br>
         Bank: <strong>Opay</strong>
       </p>
     `;
 
-    // Open confirmation modal with countdown. On confirm call submitApplication
-    openConfirmModal(accountHtml, () => submitApplication(data));
+    // Open confirmation modal (single confirm). On confirm, loader will handle redirect.
+    openConfirmModal(accountHtml, data);
   });
 }
 
@@ -324,59 +365,15 @@ function closeModal(){
   modalBg.innerHTML = "";
   modalBg.setAttribute('aria-hidden','true');
   clearConfirmTimer();
-}
-
-/* Loader and success functions remain unchanged */
-function showLoaderThenSuccess(formData){
+  // reset loader content to default
   const loader = document.getElementById('loader');
-  loader.style.display = 'flex';
-  loader.style.alignItems = 'center';
-  loader.style.justifyContent = 'center';
-  setTimeout(() => {
+  if(loader){
+    loader.innerHTML = 'Processing ...';
     loader.style.display = 'none';
-    showSuccessDialog(formData);
-  }, 2000);
+  }
 }
 
-function showSuccessDialog(formData){
-  const modalBg = document.getElementById('modal');
-  modalBg.innerHTML = `
-    <div class="modal success" role="dialog" aria-modal="true">
-      <h3>Application Successful</h3>
-      <p style="margin: 10px 0 14px">Please confirm your payment proof to complete registration.</p>
-      <div style="text-align:left;color:#333;margin-bottom:12px">
-        <strong>Applicant</strong><br>
-        Name: ${escapeHtml(formData.name)}<br>
-        Phone: ${escapeHtml(formData.phone)}<br>
-        Country: ${escapeHtml(formData.country)}<br>
-        Sex: ${escapeHtml(formData.sex)}<br>
-        Age: ${escapeHtml(formData.age)}<br>
-        Marital Status: ${escapeHtml(formData.marital)}
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button id="confirmBtn" class="primary">Confirm</button>
-        <button id="closeSuccess" class="secondary">Close</button>
-      </div>
-    </div>
-  `;
-  modalBg.style.display = 'flex';
-  modalBg.style.alignItems = 'center';
-  modalBg.style.justifyContent = 'center';
-  modalBg.setAttribute('aria-hidden','false');
-
-  document.getElementById('closeSuccess').addEventListener('click', closeModal);
-  document.getElementById('confirmBtn').addEventListener('click', () => {
-    const waMsg = `Application submitted. Name: ${formData.name}; Phone: ${formData.phone}; Payment: 5,000. I want to confirm payment proof.`;
-    const url = 'https://wa.me/09079525683?text=' + encodeURIComponent(waMsg);
-    const loader = document.getElementById('loader');
-    loader.style.display = 'flex';
-    loader.style.alignItems = 'center';
-    loader.style.justifyContent = 'center';
-    setTimeout(() => { window.location.href = url; }, 2000);
-  });
-}
-
-/* Card popup functions unchanged */
+/* Card popup functions (minor ID fixes) */
 function openPopup(name){
   const p = document.getElementById('cardPopup');
   const title = p.querySelector('#popupTitle');
@@ -402,11 +399,12 @@ document.addEventListener('keydown', function(ev){
   }
 });
 
+/* About navigation */
 function goAbout(){
   const loader = document.getElementById('loader');
   loader.style.display = 'flex';
   setTimeout(()=> { loader.style.display = 'none'; window.location.href = 'about.html'; }, 800);
 }
-</script>
+</script>   
 </body> 
 </html>
