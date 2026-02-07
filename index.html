@@ -135,198 +135,278 @@
   </div>
 </div>
 
-<!-- apply form modal (hidden until opened) -->
+<!-- Replace your existing <script> ... </script> block with this updated script -->
 <script>
-  /* Utility to create and show the apply form modal with validation */
-  function openApplyForm(){
-    const modalBg = document.getElementById('modal');
-    modalBg.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
-        <h3 id="formTitle">Registration Form</h3>
+/* Utility to escape HTML inserted into the DOM */
+function escapeHtml(str){
+  if(!str) return "";
+  return String(str).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
 
-        <label for="name">Name:</label>
-        <input id="name" name="name" type="text" placeholder="Full name" />
+/* Submit logic extracted so Confirm can call the same behavior */
+function submitApplication(formData){
+  // This preserves your original behavior: close form modal, show loader then success
+  closeModal();
+  showLoaderThenSuccess(formData);
+}
 
-        <label for="phone">Phone:</label>
-        <input id="phone" name="phone" type="tel" placeholder="+1234567890" />
+/* Confirmation modal with 25 minute countdown */
+let _confirmTimerId = null;
+let _confirmRemaining = 0;
 
-        <label for="country">Country:</label>
-        <input id="country" name="country" type="text" placeholder="Country" />
-
-        <label for="sex">Sex:</label>
-        <select id="sex" name="sex">
-          <option value="">Select</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
-
-        <label for="age">Age:</label>
-        <input id="age" name="age" type="number" min="13" placeholder="Age" />
-
-        <label for="marital">Marital Status:</label>
-        <select id="marital" name="marital">
-          <option value="">Select</option>
-          <option value="Single">Single</option>
-          <option value="Married">Married</option>
-          <option value="Divorced">Divorced</option>
-          <option value="Widowed">Widowed</option>
-        </select>
-
-        <div class="actions" style="margin-top:12px;">
-          <button id="applyBtn" class="primary" disabled>Apply</button>
-          <button id="cancelBtn" class="secondary">Cancel</button>
-        </div>
-
-        <hr style="margin:14px 0;border:none;border-top:1px solid #eee" />
-
-        <p style="margin:8px 0"><strong>Registration: ₦5,000</strong></p>
-        <p style="margin:0;color:#333">Account Number: <strong>8168000422</strong><br>
-        Account Name: <strong>Godwin</strong><br>
-        Bank: <strong>Opay</strong></p>
+function openConfirmModal(accountDetailsHtml, onConfirm){
+  const modalBg = document.getElementById('modal');
+  // build modal content
+  modalBg.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <h3 id="confirmTitle">Confirm Payment Details</h3>
+      <div style="margin:10px 0;color:#333;text-align:left">
+        ${accountDetailsHtml}
       </div>
-    `;
-    modalBg.style.display = 'flex';
-    modalBg.style.alignItems = 'center';
-    modalBg.style.justifyContent = 'center';
-    modalBg.setAttribute('aria-hidden','false');
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <div style="font-weight:700;color:#111">Time left</div>
+        <div id="confirmTimer" style="font-family:monospace;font-size:16px;color:#111">25:00</div>
+      </div>
+      <div class="actions" style="margin-top:14px">
+        <button id="confirmOk" class="primary">Confirm</button>
+        <button id="confirmCancel" class="secondary">Cancel</button>
+      </div>
+    </div>
+  `;
+  modalBg.style.display = 'flex';
+  modalBg.style.alignItems = 'center';
+  modalBg.style.justifyContent = 'center';
+  modalBg.setAttribute('aria-hidden','false');
 
-    // wire up elements and validation
-    const fields = ['name','phone','country','sex','age','marital'].map(id => document.getElementById(id));
-    const applyBtn = document.getElementById('applyBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-
-    function validate(){
-      // all fields must be non-empty; age must be a positive number
-      const valid = fields.every(f => {
-        if(!f) return false;
-        const v = f.value && String(f.value).trim();
-        if(!v) return false;
-        if(f.id === 'age') return Number(v) > 0;
-        return true;
-      });
-      applyBtn.disabled = !valid;
-    }
-
-    fields.forEach(f => f.addEventListener('input', validate));
-    // initial validation
-    validate();
-
-    cancelBtn.addEventListener('click', closeModal);
-    applyBtn.addEventListener('click', () => {
-      // double-check validation
-      if(applyBtn.disabled) return;
-      // gather data
-      const data = {
-        name: document.getElementById('name').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        country: document.getElementById('country').value.trim(),
-        sex: document.getElementById('sex').value,
-        age: document.getElementById('age').value.trim(),
-        marital: document.getElementById('marital').value
-      };
-      // show loader then success dialog
+  // start 25 minute countdown
+  clearConfirmTimer();
+  _confirmRemaining = 25 * 60; // seconds
+  const timerEl = document.getElementById('confirmTimer');
+  function formatMMSS(s){
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const sec = (s % 60).toString().padStart(2,'0');
+    return `${m}:${sec}`;
+  }
+  timerEl.textContent = formatMMSS(_confirmRemaining);
+  _confirmTimerId = setInterval(() => {
+    _confirmRemaining--;
+    if(timerEl) timerEl.textContent = formatMMSS(_confirmRemaining);
+    if(_confirmRemaining <= 0){
+      clearConfirmTimer();
+      // auto-close modal on expiry
       closeModal();
-      showLoaderThenSuccess(data);
+    }
+  }, 1000);
+
+  // wire buttons
+  const ok = document.getElementById('confirmOk');
+  const cancel = document.getElementById('confirmCancel');
+
+  ok.addEventListener('click', () => {
+    // disable to prevent double clicks
+    ok.disabled = true;
+    clearConfirmTimer();
+    onConfirm();
+  });
+
+  cancel.addEventListener('click', () => {
+    clearConfirmTimer();
+    closeModal();
+  });
+}
+
+function clearConfirmTimer(){
+  if(_confirmTimerId){
+    clearInterval(_confirmTimerId);
+    _confirmTimerId = null;
+  }
+}
+
+/* Open the registration form modal */
+function openApplyForm(){
+  const modalBg = document.getElementById('modal');
+  modalBg.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <h3 id="formTitle">Registration Form</h3>
+
+      <label for="name">Name :</label>
+      <input id="name" name="name" type="text" placeholder="Full name" />
+
+      <label for="phone">Phone :</label>
+      <input id="phone" name="phone" type="tel" placeholder="+1234567890" />
+
+      <label for="country">Country :</label>
+      <input id="country" name="country" type="text" placeholder="Country" />
+
+      <label for="sex">Sex :</label>
+      <select id="sex" name="sex">
+        <option value="">Select</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <label for="age">Age :</label>
+      <input id="age" name="age" type="number" min="13" placeholder="Age" />
+
+      <label for="marital">Marital Status :</label>
+      <select id="marital" name="marital">
+        <option value="">Select</option>
+        <option value="Single">Single</option>
+        <option value="Married">Married</option>
+        <option value="Divorced">Divorced</option>
+        <option value="Widowed">Widowed</option>
+      </select>
+
+      <div class="actions" style="margin-top:12px;">
+        <button id="applyBtn" class="primary" disabled>Apply</button>
+        <button id="cancelBtn" class="secondary">Cancel</button>
+      </div>
+    </div>
+  `;
+  modalBg.style.display = 'flex';
+  modalBg.style.alignItems = 'center';
+  modalBg.style.justifyContent = 'center';
+  modalBg.setAttribute('aria-hidden','false');
+
+  // wire up elements and validation
+  const fields = ['name','phone','country','sex','age','marital'].map(id => document.getElementById(id));
+  const applyBtn = document.getElementById('applyBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+
+  function validate(){
+    const valid = fields.every(f => {
+      if(!f) return false;
+      const v = f.value && String(f.value).trim();
+      if(!v) return false;
+      if(f.id === 'age') return Number(v) > 0;
+      return true;
     });
+    applyBtn.disabled = !valid;
   }
+  fields.forEach(f => f.addEventListener('input', validate));
+  validate();
 
-  function closeModal(){
-    const modalBg = document.getElementById('modal');
-    modalBg.style.display = 'none';
-    modalBg.innerHTML = '';
-    modalBg.setAttribute('aria-hidden','true');
-  }
+  cancelBtn.addEventListener('click', closeModal);
 
-  function showLoaderThenSuccess(formData){
+  applyBtn.addEventListener('click', () => {
+    if(applyBtn.disabled) return;
+    const data = {
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      country: document.getElementById('country').value.trim(),
+      sex: document.getElementById('sex').value,
+      age: document.getElementById('age').value.trim(),
+      marital: document.getElementById('marital').value
+    };
+
+    // Build account details HTML to show in confirmation modal
+    const accountHtml = `
+      <p style="margin:0"><strong>Registration: 5,000</strong></p>
+      <p style="margin:8px 0 0">
+        Account Number: <strong>8168000422</strong><br>
+        Account Name: <strong>Godwin</strong><br>
+        Bank: <strong>Opay</strong>
+      </p>
+    `;
+
+    // Open confirmation modal with countdown. On confirm call submitApplication
+    openConfirmModal(accountHtml, () => submitApplication(data));
+  });
+}
+
+/* Close modal and cleanup */
+function closeModal(){
+  const modalBg = document.getElementById('modal');
+  modalBg.style.display = 'none';
+  modalBg.innerHTML = "";
+  modalBg.setAttribute('aria-hidden','true');
+  clearConfirmTimer();
+}
+
+/* Loader and success functions remain unchanged */
+function showLoaderThenSuccess(formData){
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';
+  loader.style.alignItems = 'center';
+  loader.style.justifyContent = 'center';
+  setTimeout(() => {
+    loader.style.display = 'none';
+    showSuccessDialog(formData);
+  }, 2000);
+}
+
+function showSuccessDialog(formData){
+  const modalBg = document.getElementById('modal');
+  modalBg.innerHTML = `
+    <div class="modal success" role="dialog" aria-modal="true">
+      <h3>Application Successful</h3>
+      <p style="margin: 10px 0 14px">Please confirm your payment proof to complete registration.</p>
+      <div style="text-align:left;color:#333;margin-bottom:12px">
+        <strong>Applicant</strong><br>
+        Name: ${escapeHtml(formData.name)}<br>
+        Phone: ${escapeHtml(formData.phone)}<br>
+        Country: ${escapeHtml(formData.country)}<br>
+        Sex: ${escapeHtml(formData.sex)}<br>
+        Age: ${escapeHtml(formData.age)}<br>
+        Marital Status: ${escapeHtml(formData.marital)}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button id="confirmBtn" class="primary">Confirm</button>
+        <button id="closeSuccess" class="secondary">Close</button>
+      </div>
+    </div>
+  `;
+  modalBg.style.display = 'flex';
+  modalBg.style.alignItems = 'center';
+  modalBg.style.justifyContent = 'center';
+  modalBg.setAttribute('aria-hidden','false');
+
+  document.getElementById('closeSuccess').addEventListener('click', closeModal);
+  document.getElementById('confirmBtn').addEventListener('click', () => {
+    const waMsg = `Application submitted. Name: ${formData.name}; Phone: ${formData.phone}; Payment: 5,000. I want to confirm payment proof.`;
+    const url = 'https://wa.me/09079525683?text=' + encodeURIComponent(waMsg);
     const loader = document.getElementById('loader');
     loader.style.display = 'flex';
     loader.style.alignItems = 'center';
     loader.style.justifyContent = 'center';
-    // 2 second animation
-    setTimeout(() => {
-      loader.style.display = 'none';
-      showSuccessDialog(formData);
-    }, 2000);
-  }
-
-  function showSuccessDialog(formData){
-    const modalBg = document.getElementById('modal');
-    modalBg.innerHTML = `
-      <div class="modal success" role="dialog" aria-modal="true">
-        <h3>Application Successful</h3>
-        <p style="margin:10px 0 14px">Please confirm your payment proof to complete registration.</p>
-        <div style="text-align:left;color:#333;margin-bottom:12px">
-          <strong>Applicant</strong><br>
-          Name: ${escapeHtml(formData.name)}<br>
-          Phone: ${escapeHtml(formData.phone)}<br>
-          Country: ${escapeHtml(formData.country)}<br>
-          Sex: ${escapeHtml(formData.sex)}<br>
-          Age: ${escapeHtml(formData.age)}<br>
-          Marital Status: ${escapeHtml(formData.marital)}
-        </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end">
-          <button id="confirmBtn" class="primary">Confirm</button>
-          <button id="closeSuccess" class="secondary">Close</button>
-        </div>
-      </div>
-    `;
-    modalBg.style.display = 'flex';
-    modalBg.style.alignItems = 'center';
-    modalBg.style.justifyContent = 'center';
-    modalBg.setAttribute('aria-hidden','false');
-
-    document.getElementById('closeSuccess').addEventListener('click', closeModal);
-    document.getElementById('confirmBtn').addEventListener('click', () => {
-      // redirect to WhatsApp with a short message including applicant name and phone
-      const waMsg = `Application submitted. Name: ${formData.name}; Phone: ${formData.phone}; Payment: ₦5,000. I want to confirm payment proof.`;
-      const url = 'https://wa.me/09079525683?text=' + encodeURIComponent(waMsg);
-      // show loader then redirect
-      const loader = document.getElementById('loader');
-      loader.style.display = 'flex';
-      loader.style.alignItems = 'center';
-      loader.style.justifyContent = 'center';
-      setTimeout(() => { window.location.href = url; }, 2000);
-    });
-  }
-
-  /* Card popup: message only. Clicking overlay closes it. */
-  function openPopup(name){
-    const p = document.getElementById('cardPopup');
-    const title = p.querySelector('#popupTitle');
-    if(title) title.textContent = 'Apply to Chat';
-    p.style.display = 'flex';
-    p.setAttribute('aria-hidden','false');
-  }
-  function closeCardPopup(e){
-    if(e.target && e.target.id === 'cardPopup'){
-      const p = document.getElementById('cardPopup');
-      p.style.display = 'none';
-      p.setAttribute('aria-hidden','true');
-    }
-  }
-
-  /* Escape key closes modals/popups */
-  document.addEventListener('keydown', function(ev){
-    if(ev.key === 'Escape'){
-      const p = document.getElementById('cardPopup');
-      if(p && p.style.display === 'flex') { p.style.display = 'none'; p.setAttribute('aria-hidden','true'); }
-      const modalBg = document.getElementById('modal');
-      if(modalBg && modalBg.style.display === 'flex') { closeModal(); }
-    }
+    setTimeout(() => { window.location.href = url; }, 2000);
   });
+}
 
-  function goAbout(){ 
-    const loader = document.getElementById('loader');
-    loader.style.display = 'flex';
-    setTimeout(()=> { loader.style.display = 'none'; window.location.href = 'about.html'; }, 800);
+/* Card popup functions unchanged */
+function openPopup(name){
+  const p = document.getElementById('cardPopup');
+  const title = p.querySelector('#popupTitle');
+  if(title) title.textContent = 'Apply to Chat';
+  p.style.display = 'flex';
+  p.setAttribute('aria-hidden','false');
+}
+function closeCardPopup(e){
+  if(e.target && e.target.id === 'cardPopup'){
+    const p = document.getElementById('cardPopup');
+    p.style.display = 'none';
+    p.setAttribute('aria-hidden','true');
   }
+}
 
-  /* small helper to escape HTML in inserted strings */
-  function escapeHtml(str){
-    if(!str) return '';
-    return String(str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
+/* Escape key closes modals/popups */
+document.addEventListener('keydown', function(ev){
+  if(ev.key === 'Escape'){
+    const p = document.getElementById('cardPopup');
+    if(p && p.style.display === 'flex') { p.style.display = 'none'; p.setAttribute('aria-hidden','true'); }
+    const modalBg = document.getElementById('modal');
+    if(modalBg && modalBg.style.display === 'flex') { closeModal(); }
   }
+});
+
+function goAbout(){
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';
+  setTimeout(()=> { loader.style.display = 'none'; window.location.href = 'about.html'; }, 800);
+}
 </script>
-</body>
+</body> 
 </html>
